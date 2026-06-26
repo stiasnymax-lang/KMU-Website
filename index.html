@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HavelShop ERP – Prototyp</title>
+<style>
+  :root{
+    --ink:#16241F; --muted:#647871; --line:#E3ECE7; --line-2:#EEF3F1;
+    --bg:#F4F7F5; --surface:#FFFFFF;
+    --teal:#0F6E56; --teal-600:#138A6B; --teal-50:#E7F4EF; --teal-700:#0B5443;
+    --nav:#0E3A2F; --nav-2:#0A2E25; --nav-line:#1C4B3E; --nav-mut:#8FB6A8;
+    --amber:#B5781A; --amber-50:#FBF1DF; --coral:#B2452A; --coral-50:#FBEAE4;
+    --shadow:0 1px 2px rgba(16,40,32,.04), 0 6px 18px rgba(16,40,32,.06);
+    --radius:12px;
+    --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:var(--sans); color:var(--ink); background:var(--bg); font-size:14px; line-height:1.5;
+       -webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+
+  /* ---------- App shell ---------- */
+  .app{display:grid; grid-template-columns:248px 1fr; min-height:100vh}
+  .side{background:linear-gradient(180deg,var(--nav),var(--nav-2)); color:#EAF3EF; display:flex; flex-direction:column;
+        position:sticky; top:0; height:100vh}
+  .brand{display:flex; align-items:center; gap:11px; padding:20px 20px 18px}
+  .brand .mark{flex:0 0 auto}
+  .brand .wm{display:flex; flex-direction:column; line-height:1.05}
+  .brand .wm b{font-size:17px; letter-spacing:.2px; font-weight:700}
+  .brand .wm span{font-size:11px; color:var(--nav-mut); letter-spacing:.6px; text-transform:uppercase}
+  .nav{padding:6px 12px; display:flex; flex-direction:column; gap:2px}
+  .nav .grp{font-size:10.5px; letter-spacing:.8px; text-transform:uppercase; color:var(--nav-mut);
+            padding:14px 12px 6px}
+  .nav button{display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:none; border:0;
+              color:#D6E6E0; padding:9px 12px; border-radius:9px; cursor:pointer; font-size:13.5px}
+  .nav button svg{flex:0 0 18px; opacity:.85}
+  .nav button:hover{background:rgba(255,255,255,.06)}
+  .nav button.active{background:var(--teal); color:#fff; font-weight:600}
+  .nav button.active svg{opacity:1}
+  .side .foot{margin-top:auto; padding:14px 16px; border-top:1px solid var(--nav-line); display:flex; align-items:center; gap:10px}
+  .side .foot .av{width:32px;height:32px;border-radius:50%;background:var(--teal-600);display:grid;place-items:center;
+                  font-weight:700;color:#fff;font-size:12px}
+  .side .foot small{display:block;color:var(--nav-mut);font-size:11px}
+
+  /* ---------- Top bar ---------- */
+  .main{display:flex; flex-direction:column; min-width:0}
+  .top{display:flex; align-items:center; gap:16px; padding:14px 28px; background:var(--surface);
+       border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5}
+  .crumb{font-size:12.5px; color:var(--muted)}
+  .crumb b{color:var(--ink); font-weight:600}
+  .search{margin-left:auto; position:relative}
+  .search input{width:280px; max-width:42vw; padding:9px 12px 9px 34px; border:1px solid var(--line);
+                border-radius:9px; background:#F7FAF9; font-size:13px}
+  .search input:focus{outline:2px solid var(--teal-50); border-color:var(--teal)}
+  .search svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted)}
+  .top .bell{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:#fff;display:grid;
+             place-items:center;cursor:pointer;color:var(--muted);position:relative}
+  .top .bell .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--coral)}
+
+  .content{padding:26px 28px 60px; max-width:1240px; width:100%}
+  .screen{display:none; animation:fade .25s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+
+  .h{display:flex; align-items:flex-end; gap:14px; margin-bottom:20px; flex-wrap:wrap}
+  .h h1{font-size:23px; margin:0; letter-spacing:-.2px}
+  .h p{margin:3px 0 0; color:var(--muted); font-size:13.5px}
+  .h .sp{margin-left:auto; display:flex; gap:10px}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:inline-flex; align-items:center; gap:8px; padding:9px 15px; border-radius:9px; border:1px solid var(--line);
+       background:#fff; color:var(--ink); font-size:13.5px; font-weight:600; cursor:pointer}
+  .btn:hover{background:#F7FAF9}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff}
+  .btn.primary:hover{background:var(--teal-700)}
+  .btn.ghost{background:transparent}
+  .btn svg{flex:0 0 auto}
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .card .ch{display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--line-2)}
+  .card .ch h3{margin:0; font-size:14.5px}
+  .card .ch .link{margin-left:auto; font-size:12.5px; color:var(--teal); font-weight:600; cursor:pointer}
+  .card .cb{padding:18px}
+
+  /* ---------- Dashboard ---------- */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:18px}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 16px 15px;
+        box-shadow:var(--shadow)}
+  .stat .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;margin-bottom:12px}
+  .stat .num{font-size:27px; font-weight:700; letter-spacing:-.5px; line-height:1}
+  .stat .lab{color:var(--muted); font-size:12.5px; margin-top:5px}
+  .stat .delta{font-size:11.5px; font-weight:600; margin-top:8px}
+  .delta.up{color:var(--teal)} .delta.warn{color:var(--amber)} .delta.bad{color:var(--coral)}
+  .grid2{display:grid; grid-template-columns:1.55fr 1fr; gap:18px}
+
+  .todo{display:flex; flex-direction:column}
+  .todo .row{display:flex; align-items:center; gap:13px; padding:12px 18px; border-top:1px solid var(--line-2)}
+  .todo .row:first-child{border-top:0}
+  .todo .tag{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}
+  .todo .row b{font-size:13.5px} .todo .row small{color:var(--muted); display:block; font-size:12px}
+  .todo .row .go{margin-left:auto; color:var(--muted)}
+  .todo .row:hover{background:#FAFCFB; cursor:pointer}
+
+  .split{display:flex; align-items:center; gap:14px; padding:4px 2px 10px}
+  .donut{--p:68; width:104px;height:104px;border-radius:50%; flex:0 0 auto;
+    background:conic-gradient(var(--teal) calc(var(--p)*1%), #D9B24A 0);
+    -webkit-mask:radial-gradient(circle 33px at 50% 50%, transparent 98%, #000 100%);
+            mask:radial-gradient(circle 33px at 50% 50%, transparent 98%, #000 100%)}
+  .legend div{display:flex; align-items:center; gap:8px; font-size:13px; margin:5px 0}
+  .legend .sw{width:11px;height:11px;border-radius:3px}
+
+  .qa{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .qa button{display:flex; align-items:center; gap:10px; padding:13px; border:1px solid var(--line); border-radius:10px;
+             background:#fff; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); text-align:left}
+  .qa button:hover{border-color:var(--teal); background:var(--teal-50)}
+  .qa button .qi{width:30px;height:30px;border-radius:8px;background:var(--teal-50);color:var(--teal);
+                 display:grid;place-items:center;flex:0 0 auto}
+
+  /* ---------- Tables ---------- */
+  .toolbar{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap}
+  .chips{display:flex; gap:7px}
+  .chip{padding:7px 13px; border-radius:99px; border:1px solid var(--line); background:#fff; font-size:12.5px;
+        cursor:pointer; color:var(--muted); font-weight:600}
+  .chip.on{background:var(--teal); border-color:var(--teal); color:#fff}
+  .filt{margin-left:auto; position:relative}
+  .filt input{padding:9px 12px 9px 32px; border:1px solid var(--line); border-radius:9px; width:240px; font-size:13px; background:#fff}
+  .filt svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted)}
+
+  table{width:100%; border-collapse:collapse; background:var(--surface)}
+  .tablecard{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow)}
+  thead th{font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); text-align:left;
+           padding:12px 16px; border-bottom:1px solid var(--line); background:#FAFCFB; font-weight:600}
+  tbody td{padding:13px 16px; border-bottom:1px solid var(--line-2); font-size:13.5px; vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#FAFCFB}
+  td .nm{font-weight:600}
+  td .sub{color:var(--muted); font-size:12px}
+  .num-c{text-align:right; font-variant-numeric:tabular-nums}
+  .rowbtn{border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 10px; font-size:12px;
+          font-weight:600; cursor:pointer; color:var(--teal)}
+  .rowbtn:hover{background:var(--teal-50)}
+  .tfoot{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; color:var(--muted);
+         font-size:12.5px; border-top:1px solid var(--line); background:#FAFCFB}
+
+  /* ---------- Badges ---------- */
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:99px; font-size:11.5px; font-weight:600}
+  .b-b2b{background:#E9EEFB; color:#33489B} .b-b2c{background:#EAF1EC; color:#3C7A4F}
+  .b-on{background:var(--teal-50); color:var(--teal-700)} .b-off{background:#EFEFEF; color:#777}
+  .b-lock{background:var(--coral-50); color:var(--coral)} .b-draft{background:var(--amber-50); color:var(--amber)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .av{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600}
+  .av .dot{box-shadow:0 0 0 3px rgba(0,0,0,.04)}
+  .av.ok{color:var(--teal)} .av.ok .dot{background:var(--teal)}
+  .av.part{color:var(--amber)} .av.part .dot{background:#D9A53A}
+  .av.no{color:var(--coral)} .av.no .dot{background:var(--coral)}
+
+  /* ---------- Forms ---------- */
+  .formwrap{display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start}
+  .sec{padding:18px}
+  .sec + .sec{border-top:1px solid var(--line-2)}
+  .sec h4{margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--teal-700)}
+  .fg{display:grid; grid-template-columns:1fr 1fr; gap:14px 18px}
+  .fg.one{grid-template-columns:1fr}
+  .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:5px; font-weight:600}
+  .field label .req{color:var(--coral)}
+  .field input,.field select,.field textarea{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:9px;
+        font-size:13.5px; background:#fff; color:var(--ink); font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--teal-50); border-color:var(--teal)}
+  .field .hint{font-size:11.5px; color:var(--muted); margin-top:5px}
+  .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none}
+  .switch input{display:none}
+  .track{width:40px;height:23px;border-radius:99px;background:#D5DEDA; position:relative; transition:.18s}
+  .track::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;
+                box-shadow:0 1px 2px rgba(0,0,0,.2); transition:.18s}
+  .switch input:checked + .track{background:var(--teal)}
+  .switch input:checked + .track::after{left:19px}
+  .aside .card .cb{padding:16px}
+  .meta{display:flex; flex-direction:column; gap:13px}
+  .meta .m{display:flex; align-items:center; gap:11px}
+  .meta .m .mi{width:34px;height:34px;border-radius:9px;background:var(--teal-50);color:var(--teal);display:grid;place-items:center;flex:0 0 auto}
+  .meta .m b{font-size:13.5px} .meta .m small{display:block;color:var(--muted);font-size:11.5px}
+  .stickybar{display:flex; gap:10px; justify-content:flex-end; padding:14px 18px; border-top:1px solid var(--line-2)}
+  .hidden{display:none !important}
+
+  /* ---------- Beleg / Auftrag ---------- */
+  .beleg-grid{display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start}
+  .postable td{padding:9px 12px}
+  .postable input,.postable select{padding:7px 9px; border:1px solid var(--line); border-radius:8px; font-size:13px; width:100%; background:#fff}
+  .postable .qty{width:74px; text-align:right}
+  .delrow{border:0;background:none;cursor:pointer;color:var(--muted);padding:4px}
+  .delrow:hover{color:var(--coral)}
+  .addrow{margin:12px 0 0; }
+  .totals{display:flex; flex-direction:column; gap:9px}
+  .totals .t{display:flex; justify-content:space-between; font-size:13.5px}
+  .totals .t.big{font-size:18px; font-weight:700; padding-top:11px; border-top:1px solid var(--line); margin-top:3px}
+  .note{display:flex; gap:10px; padding:11px 13px; border-radius:10px; background:var(--amber-50); color:#7a5210;
+        font-size:12.5px; align-items:flex-start; margin-top:14px}
+  .note svg{flex:0 0 auto; margin-top:1px}
+
+  /* ---------- Konzept ---------- */
+  .prose{max-width:880px}
+  .prose h2{font-size:16px; margin:26px 0 10px}
+  .prose h2:first-child{margin-top:4px}
+  .prose p{color:#2C3A35; margin:0 0 11px}
+  .kgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:6px 0 8px}
+  .kbox{border:1px solid var(--line); border-radius:11px; padding:15px; background:#fff}
+  .kbox b{display:block; margin-bottom:5px}
+  .kbox span{color:var(--muted); font-size:13px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;background:var(--teal-50);color:var(--teal-700);
+        font-size:11.5px;font-weight:600;margin:0 4px 4px 0}
+
+  /* ---------- Toast ---------- */
+  .toast{position:fixed; bottom:22px; right:22px; background:var(--ink); color:#fff; padding:12px 16px; border-radius:11px;
+         box-shadow:0 10px 30px rgba(0,0,0,.25); display:flex; align-items:center; gap:10px; font-size:13.5px;
+         transform:translateY(20px); opacity:0; pointer-events:none; transition:.25s; z-index:50}
+  .toast.show{transform:none; opacity:1}
+  .toast svg{color:#6FE0B4}
+
+  @media(max-width:960px){
+    .app{grid-template-columns:1fr}
+    .side{position:fixed; left:0; top:0; width:248px; transform:translateX(-100%); transition:.2s; z-index:30}
+    .side.open{transform:none}
+    .stats{grid-template-columns:1fr 1fr}
+    .grid2,.formwrap,.beleg-grid,.kgrid{grid-template-columns:1fr}
+    .burger{display:grid !important}
+  }
+  .burger{display:none; width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:#fff;
+          place-items:center;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <span class="mark">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <rect width="34" height="34" rx="9" fill="#0F6E56"/>
+          <path d="M6 21c2.4 0 2.4-2.4 4.8-2.4S13.2 21 15.6 21s2.4-2.4 4.8-2.4S22.8 21 25.2 21s2.4-2.4 4.8-2.4"
+                stroke="#7FE3C0" stroke-width="2" stroke-linecap="round"/>
+          <path d="M6 25c2.4 0 2.4-2.4 4.8-2.4S13.2 25 15.6 25s2.4-2.4 4.8-2.4S22.8 25 25.2 25s2.4-2.4 4.8-2.4"
+                stroke="#CFF3E6" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+          <circle cx="17" cy="12" r="3.4" fill="#CFF3E6"/>
+        </svg>
+      </span>
+      <span class="wm"><b>HavelShop</b><span>ERP&nbsp;·&nbsp;Brandenburg</span></span>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="grp">Übersicht</div>
+      <button data-screen="dashboard" class="active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <div class="grp">Stammdaten</div>
+      <button data-screen="kunden">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.6M20.5 19a4.6 4.6 0 0 0-3.2-4.3"/></svg>
+        Kunden
+      </button>
+      <button data-screen="artikel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        Artikel
+      </button>
+      <button data-screen="lieferanten">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>
+        Lieferanten
+      </button>
+      <div class="grp">Belege</div>
+      <button data-screen="auftrag">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>
+        Auftrag erfassen
+      </button>
+      <button data-screen="konzept">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        Konzept &amp; Annahmen
+      </button>
+    </nav>
+    <div class="foot">
+      <div class="av">LH</div>
+      <div><b style="font-size:13px">L. Hauptmann</b><small>Vertrieb · Innendienst</small></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="top">
+      <button class="burger" onclick="document.getElementById('side').classList.toggle('open')" aria-label="Menü">
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="crumb">HavelShop&nbsp;·&nbsp;<b id="crumb">Dashboard</b></div>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input placeholder="Kunden, Artikel, Belege suchen …" aria-label="Suche">
+      </div>
+      <button class="bell" aria-label="Benachrichtigungen"><span class="dot"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+      </button>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section class="screen active" id="dashboard">
+        <div class="h">
+          <div><h1>Guten Morgen, Lena</h1><p>Mittwoch, 19. Juni 2026 · 7 Aufgaben für heute</p></div>
+          <div class="sp">
+            <button class="btn" onclick="go('kunden')">Kundenliste</button>
+            <button class="btn primary" onclick="go('auftrag')">
+              <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+              Neuer Auftrag
+            </button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="ico" style="background:var(--teal-50);color:var(--teal)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v4h4"/></svg></div>
+            <div class="num">38</div><div class="lab">Offene Aufträge</div>
+            <div class="delta up">12 davon versandbereit</div>
+          </div>
+          <div class="stat">
+            <div class="ico" style="background:var(--amber-50);color:var(--amber)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></div>
+            <div class="num">9</div><div class="lab">Bestellvorschläge</div>
+            <div class="delta warn">3 für Asien-Warengruppen</div>
+          </div>
+          <div class="stat">
+            <div class="ico" style="background:var(--coral-50);color:var(--coral)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></div>
+            <div class="num">4</div><div class="lab">Artikel unter Meldebestand</div>
+            <div class="delta bad">1 ohne Bestand</div>
+          </div>
+          <div class="stat">
+            <div class="ico" style="background:var(--teal-50);color:var(--teal)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 3 7-8"/><path d="M21 7v5h-5"/></svg></div>
+            <div class="num">142.8&nbsp;T€</div><div class="lab">Umsatz Juni</div>
+            <div class="delta up">▲ 8,3 % ggü. Vormonat</div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <div class="ch"><h3>Heute zu erledigen</h3><span class="link" onclick="toast('Alle Aufgaben geöffnet')">Alle ansehen</span></div>
+            <div class="todo">
+              <div class="row" onclick="go('auftrag')">
+                <span class="tag" style="background:var(--coral-50);color:var(--coral)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+                <div><b>Auftrag A-24817 · Müller Bau GmbH</b><small>Warnwesten nicht verfügbar – Beschaffung anstoßen</small></div>
+                <span class="badge b-draft">B2B · Rückstand</span><span class="go"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="m9 6 6 6-6 6"/></svg></span>
+              </div>
+              <div class="row" onclick="go('lieferanten')">
+                <span class="tag" style="background:var(--amber-50);color:var(--amber)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/></svg></span>
+                <div><b>3 Bestellvorschläge freigeben</b><small>Textil Süd GmbH, Kunshan Textile (Asien, lange WBZ)</small></div>
+                <span class="badge b-draft">Einkauf</span><span class="go"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="m9 6 6 6-6 6"/></svg></span>
+              </div>
+              <div class="row" onclick="go('artikel')">
+                <span class="tag" style="background:var(--teal-50);color:var(--teal)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg></span>
+                <div><b>Artikel ART-2031 freigeben</b><small>Softshelljacke – Konditionen vollständig gepflegt</small></div>
+                <span class="badge b-draft">In Vorbereitung</span><span class="go"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="m9 6 6 6-6 6"/></svg></span>
+              </div>
+              <div class="row" onclick="toast('Veredelungsprüfung geöffnet')">
+                <span class="tag" style="background:var(--teal-50);color:var(--teal)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></span>
+                <div><b>Logodaten prüfen · Auftrag A-24820</b><small>Stickerei-Datei vom Kunden – Softwareprüfung auffällig</small></div>
+                <span class="badge b-lock">Klärung</span><span class="go"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="m9 6 6 6-6 6"/></svg></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:18px">
+            <div class="card">
+              <div class="ch"><h3>Umsatz nach Kundengruppe</h3></div>
+              <div class="cb">
+                <div class="split">
+                  <div class="donut" style="--p:71"></div>
+                  <div class="legend">
+                    <div><span class="sw" style="background:var(--teal)"></span> B2B · 71&nbsp;% <b style="margin-left:auto">101,4&nbsp;T€</b></div>
+                    <div><span class="sw" style="background:#D9B24A"></span> B2C · 29&nbsp;% <b style="margin-left:auto">41,4&nbsp;T€</b></div>
+                    <div style="color:var(--muted);font-size:12px;margin-top:6px">Der Großteil des Geschäfts läuft über B2B.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ch"><h3>Schnellzugriff</h3></div>
+              <div class="cb">
+                <div class="qa">
+                  <button onclick="go('auftrag')"><span class="qi"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg></span>Auftrag anlegen</button>
+                  <button onclick="go('kunden')"><span class="qi"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg></span>Kunde suchen</button>
+                  <button onclick="go('artikel')"><span class="qi"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg></span>Artikel pflegen</button>
+                  <button onclick="go('lieferanten')"><span class="qi"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/></svg></span>Bestellung</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== KUNDENLISTE ===== -->
+      <section class="screen" id="kunden">
+        <div class="h">
+          <div><h1>Kunden</h1><p>Alle Kunden im Überblick – nach Gruppe filtern, durchsuchen, öffnen.</p></div>
+          <div class="sp"><button class="btn primary" onclick="toast('Neuen Kunden anlegen')">
+            <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>Neuer Kunde</button></div>
+        </div>
+        <div class="toolbar">
+          <div class="chips" id="kchips">
+            <button class="chip on" data-f="alle">Alle</button>
+            <button class="chip" data-f="B2B">B2B</button>
+            <button class="chip" data-f="B2C">B2C</button>
+            <button class="chip" data-f="gesperrt">Gesperrt</button>
+          </div>
+          <div class="filt">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="ksearch" placeholder="Name oder Ort filtern …" oninput="filterKunden()">
+          </div>
+        </div>
+        <div class="tablecard">
+          <table>
+            <thead><tr>
+              <th>Kunde</th><th>Gruppe</th><th>Ort</th><th>Zahlungsart</th><th>Status</th>
+              <th class="num-c">Umsatz YTD</th><th></th>
+            </tr></thead>
+            <tbody id="kbody"></tbody>
+          </table>
+          <div class="tfoot"><span id="kcount"></span><span>Seite 1 von 1</span></div>
+        </div>
+      </section>
+
+      <!-- ===== ARTIKEL-STAMMDATEN ===== -->
+      <section class="screen" id="artikel">
+        <div class="h">
+          <div><h1>Artikel pflegen</h1><p>Stammdaten-Maske · ART-2031 · Softshelljacke „HavelPro“</p></div>
+          <div class="sp">
+            <span class="badge b-draft" style="align-self:center">In Vorbereitung</span>
+          </div>
+        </div>
+        <div class="formwrap">
+          <div class="card">
+            <div class="sec">
+              <h4>Grunddaten</h4>
+              <div class="fg">
+                <div class="field"><label>Artikelnummer</label><input value="ART-2031" readonly></div>
+                <div class="field"><label>Mengeneinheit <span class="req">*</span></label>
+                  <select><option>Stück</option><option>Paar</option><option>Set</option></select></div>
+                <div class="field" style="grid-column:1/-1"><label>Bezeichnung <span class="req">*</span></label>
+                  <input value="Softshelljacke „HavelPro“, wind- und wasserabweisend"></div>
+              </div>
+            </div>
+            <div class="sec">
+              <h4>Klassifizierung</h4>
+              <div class="fg">
+                <div class="field"><label>Warengruppe <span class="req">*</span></label>
+                  <select><option>Arbeitskleidung</option><option>Werbemittel</option><option>Bürobedarf</option></select></div>
+                <div class="field"><label>Variante</label><input value="Größen S–XXL · Farbe anthrazit"></div>
+              </div>
+            </div>
+            <div class="sec">
+              <h4>Preise &amp; Konditionen</h4>
+              <div class="fg">
+                <div class="field"><label>Endpreis B2C (brutto) <span class="req">*</span></label><input value="39,90 €"></div>
+                <div class="field"><label>MwSt-Satz <span class="req">*</span></label><select><option>19 %</option><option>7 %</option></select></div>
+                <div class="field one" style="grid-column:1/-1"><label>B2B-Preisstaffel</label>
+                  <input value="ab 25 Stk: 35,90 € · ab 100 Stk: 32,50 €"><div class="hint">Staffelpreise gelten nur für B2B-Kunden.</div></div>
+              </div>
+            </div>
+            <div class="sec">
+              <h4>Lager &amp; Versand</h4>
+              <div class="fg">
+                <div class="field"><label>Fester Lagerplatz <span class="req">*</span></label><input value="H-04-12"></div>
+                <div class="field"><label>Versandklasse</label><select><option>Paket</option><option>Sperrgut</option><option>Selbstabholung</option></select></div>
+                <div class="field"><label>Meldebestand</label><input value="40"></div>
+                <div class="field"><label>Hauptlieferant</label><input value="L-3001 · Textil Süd GmbH"></div>
+              </div>
+            </div>
+            <div class="sec">
+              <h4>Veredelung</h4>
+              <label class="switch" style="margin-bottom:6px"><input type="checkbox" id="veredelbar" checked onchange="toggleVer()"><span class="track"></span>
+                <span style="font-weight:600;font-size:13.5px">Artikel ist veredelbar</span></label>
+              <div class="fg" id="verfields" style="margin-top:10px">
+                <div class="field"><label>Veredelungsarten</label><input value="Logoaufdruck, Stickerei"></div>
+                <div class="field"><label>Bearbeitungszeit</label><input value="+2 Werktage"></div>
+              </div>
+            </div>
+            <div class="stickybar">
+              <button class="btn ghost" onclick="toast('Änderungen verworfen')">Abbrechen</button>
+              <button class="btn" onclick="toast('Artikel gespeichert')">Speichern</button>
+              <button class="btn primary" onclick="toast('Artikel ART-2031 freigegeben')">Speichern &amp; freigeben</button>
+            </div>
+          </div>
+
+          <div class="aside" style="display:flex;flex-direction:column;gap:18px">
+            <div class="card"><div class="ch"><h3>Status</h3></div><div class="cb">
+              <div class="meta">
+                <div class="m"><span class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span>
+                  <div><b>In Vorbereitung</b><small>Freigabe erst bei vollständigen Konditionen</small></div></div>
+                <div class="m"><span class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg></span>
+                  <div><b>Lagerplatz H-04-12</b><small>Bestand: 120 Stück</small></div></div>
+                <div class="m"><span class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg></span>
+                  <div><b>Produktmanager: T. Reuter</b><small>Zuletzt geändert: heute, 08:12</small></div></div>
+              </div>
+            </div></div>
+            <div class="card"><div class="cb">
+              <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
+                <b style="color:var(--ink)">Pflichtfelder (*)</b> müssen vor der Freigabe vollständig sein. Der Artikel wird erst nach Freigabe in Webshop, Vertrieb und Auftrag verwendbar.
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== AUFTRAG ERFASSEN ===== -->
+      <section class="screen" id="auftrag">
+        <div class="h">
+          <div><h1>Auftrag erfassen</h1><p>Beleg-Maske · Positionen mit Live-Verfügbarkeit (ATP) aus dem Lager.</p></div>
+        </div>
+        <div class="beleg-grid">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card">
+              <div class="sec">
+                <div class="fg">
+                  <div class="field"><label>Kunde <span class="req">*</span></label>
+                    <select id="ordcust" onchange="custChange()">
+                      <option value="b2b">Müller Bau GmbH (B2B)</option>
+                      <option value="b2b2">Büroservice Havel GmbH (B2B)</option>
+                      <option value="b2c">Anna Krüger (B2C)</option>
+                    </select></div>
+                  <div class="field"><label>Auftragstyp</label><input id="ordtype" value="B2B · Kauf auf Rechnung" readonly></div>
+                  <div class="field"><label>Auftragsdatum</label><input value="19.06.2026"></div>
+                  <div class="field"><label>Liefertermin (gewünscht)</label><input value="26.06.2026"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="ch"><h3>Positionen</h3></div>
+              <table class="postable">
+                <thead><tr>
+                  <th style="width:42%">Artikel</th><th>Menge</th><th class="num-c">Einzelpreis</th>
+                  <th>Verfügbarkeit</th><th class="num-c">Summe</th><th></th>
+                </tr></thead>
+                <tbody id="posbody"></tbody>
+              </table>
+              <div class="cb" style="padding-top:0">
+                <button class="btn addrow" onclick="addPos()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                  Position hinzufügen
+                </button>
+                <div class="note">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                  <span id="atpnote">Nicht verfügbare Positionen lösen einen Bestellvorschlag aus. B2B erlaubt Teillieferung, B2C wird komplett zurückgestellt.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card"><div class="ch"><h3>Zusammenfassung</h3></div><div class="cb">
+              <div class="totals">
+                <div class="t"><span>Zwischensumme (netto)</span><b id="sub">0,00 €</b></div>
+                <div class="t"><span>Veredelung</span><b id="ver">0,00 €</b></div>
+                <div class="t"><span>MwSt 19 %</span><b id="tax">0,00 €</b></div>
+                <div class="t big"><span>Gesamt</span><b id="tot">0,00 €</b></div>
+              </div>
+            </div>
+            <div class="stickybar" style="border-top:1px solid var(--line-2)">
+              <button class="btn ghost" onclick="toast('Als Entwurf gespeichert')">Entwurf</button>
+              <button class="btn primary" onclick="toast('Auftrag angelegt – Auftragsbestätigung erstellt')">Auftrag anlegen</button>
+            </div>
+            </div>
+            <div class="card"><div class="cb">
+              <label class="switch"><input type="checkbox" id="vereddo" onchange="recalc()"><span class="track"></span>
+                <span style="font-weight:600;font-size:13.5px">Veredelung (Logo/Stickerei)</span></label>
+              <div class="hint" style="margin-top:8px;color:var(--muted);font-size:12px">Aktiviert die Logodatenprüfung; Aufschlag 1,20 € je Stück.</div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LIEFERANTEN (Platzhalter, klickbar) ===== -->
+      <section class="screen" id="lieferanten">
+        <div class="h"><div><h1>Lieferanten</h1><p>Alphabetisch den drei Einkäufern zugeordnet · Haupt- und Alternativlieferanten.</p></div></div>
+        <div class="tablecard"><table>
+          <thead><tr><th>Lieferant</th><th>Land</th><th>Rolle</th><th>Zuständiger Einkäufer</th><th>Ø Lieferzeit</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="nm">Textil Süd GmbH</span><div class="sub">L-3001 · Arbeitskleidung</div></td><td>DE</td><td><span class="badge b-on">Hauptlieferant</span></td><td>M. Albers (A–G)</td><td>5 Tage</td><td><span class="badge b-on">Aktiv</span></td></tr>
+            <tr><td><span class="nm">PromoWaren Polska</span><div class="sub">L-3002 · Werbemittel</div></td><td>PL</td><td><span class="badge b-on">Hauptlieferant</span></td><td>M. Albers (A–G)</td><td>9 Tage</td><td><span class="badge b-on">Aktiv</span></td></tr>
+            <tr><td><span class="nm">Kunshan Textile Co.</span><div class="sub">L-3009 · Arbeitskleidung</div></td><td>CN</td><td><span class="badge b-off">Alternativ</span></td><td>S. Petrow (H–P)</td><td>38 Tage</td><td><span class="badge b-draft">Bank prüfen</span></td></tr>
+            <tr><td><span class="nm">BüroDirekt OHG</span><div class="sub">L-3003 · Bürobedarf</div></td><td>DE</td><td><span class="badge b-off">Alternativ</span></td><td>T. Voß (Q–Z)</td><td>4 Tage</td><td><span class="badge b-on">Aktiv</span></td></tr>
+          </tbody>
+        </table><div class="tfoot"><span>4 Lieferanten</span><span>Bankverbindung im Vier-Augen-Prinzip</span></div></div>
+      </section>
+
+      <!-- ===== KONZEPT ===== -->
+      <section class="screen" id="konzept">
+        <div class="h"><div><h1>UI-Konzept &amp; Annahmen</h1><p>Wie der Prototyp aufgebaut ist und worauf er beruht.</p></div></div>
+        <div class="prose">
+          <h2>Grundlage (dokumentiert)</h2>
+          <p>Der Prototyp setzt direkt auf den Vorarbeiten auf: das <b>Stammdatenmodell aus Teil 1</b> (Entitäten Kunde, Artikel, Lieferant mit ihren Attributen, Pflichtfeldern und Beziehungen) und die <b>Sollprozesse aus Teil 2</b> (Stammdatenanlage, Angebot, Auftrag mit Verfügbarkeitsprüfung, Beschaffung). Die Masken bilden genau die Datenfelder und Prozessschritte ab, die dort definiert wurden.</p>
+          <div style="margin:4px 0 6px">
+            <span class="pill">Artikel-Attribute → Pflegemaske</span><span class="pill">Verfügbarkeitsprüfung (ATP) → Auftrag</span>
+            <span class="pill">B2B/B2C-Logik → Kunden &amp; Auftrag</span><span class="pill">Vier-Augen-Bank → Lieferanten</span>
+            <span class="pill">Fester Lagerplatz → Artikel</span><span class="pill">Freigabestatus → Artikel</span>
+          </div>
+
+          <h2>Leitidee der Oberfläche</h2>
+          <p>HavelShop ist ein operatives Werkzeug für Vertrieb, Einkauf und Lager – kein Marketing-Produkt. Die Oberfläche ist deshalb ruhig, dicht und aufgabenorientiert: feste Seitennavigation, ein Arbeitsbereich mit Karten, Listen und Belegmasken. Das wiederkehrende Signal ist der <b>Verfügbarkeits-Punkt</b> (grün/gelb/rot), der die Verfügbarkeitsprüfung aus dem Prozessmodell in jede Belegzeile trägt.</p>
+
+          <h2>Angewandte Best Practices</h2>
+          <div class="kgrid">
+            <div class="kbox"><b>Konsistente Navigation</b><span>Gleiche Struktur auf jedem Screen; aktiver Menüpunkt und Brotkrumen zur Orientierung.</span></div>
+            <div class="kbox"><b>Pflichtfelder sichtbar</b><span>Mit * markiert; Freigabe erst bei Vollständigkeit – wie im Stammdatenprozess gefordert.</span></div>
+            <div class="kbox"><b>Inline-Verfügbarkeit</b><span>ATP-Status direkt in der Position statt erst nach dem Speichern.</span></div>
+            <div class="kbox"><b>Klare Aktionsbenennung</b><span>Buttons sagen, was passiert: „Auftrag anlegen“, „Speichern &amp; freigeben“.</span></div>
+            <div class="kbox"><b>Listen mit Suche &amp; Filter</b><span>Schnelles Finden über Filter-Chips und Live-Suche.</span></div>
+            <div class="kbox"><b>Beleg mit Summenblock</b><span>Positionstabelle plus rechte Zusammenfassung mit Netto, MwSt, Gesamt.</span></div>
+          </div>
+
+          <h2>Getroffene Annahmen</h2>
+          <p>Nutzerrolle ist ein interner Mitarbeiter (Demo: Vertrieb-Innendienst); alle Daten sind Beispieldaten. Der Prototyp ist visuell und klickbar, aber ohne echte Persistenz oder Backend. B2C-Neukunden kaufen auf Rechnung; B2B erhält Teillieferungen, B2C wird bei Fehlbestand komplett zurückgestellt – entsprechend Teil 2. Gewählte Masken: Stammdaten = Artikel, Beleg = Auftrag, Liste = Kunden.</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg><span id="toastmsg"></span></div>
+
+<script>
+  /* ---------- Navigation ---------- */
+  const titles = {dashboard:"Dashboard", kunden:"Kunden", artikel:"Artikel pflegen", auftrag:"Auftrag erfassen", lieferanten:"Lieferanten", konzept:"Konzept & Annahmen"};
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.screen===id));
+    document.getElementById('crumb').textContent = titles[id]||id;
+    document.getElementById('side').classList.remove('open');
+    document.querySelector('.content').scrollTo(0,0); window.scrollTo(0,0);
+  }
+  document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+
+  /* ---------- Toast ---------- */
+  let tT;
+  function toast(msg){
+    const t=document.getElementById('toast'); document.getElementById('toastmsg').textContent=msg;
+    t.classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('show'),2200);
+  }
+
+  /* ---------- Kundenliste ---------- */
+  const kunden=[
+    {nr:"K-10021", name:"Müller Bau GmbH", typ:"B2B", ort:"Teltow", pay:"Rechnung 14 Tage", status:"aktiv", umsatz:48250},
+    {nr:"K-10044", name:"Büroservice Havel GmbH", typ:"B2B", ort:"Potsdam", pay:"Rechnung 30 Tage", status:"aktiv", umsatz:31980},
+    {nr:"K-10067", name:"Handwerk Schulz e.K.", typ:"B2B", ort:"Brandenburg a.d.H.", pay:"Lastschrift", status:"aktiv", umsatz:22140},
+    {nr:"K-10090", name:"Dienstleistungen Nowak", typ:"B2B", ort:"Werder", pay:"Vorkasse", status:"gesperrt", umsatz:0},
+    {nr:"K-20455", name:"Anna Krüger", typ:"B2C", ort:"Berlin", pay:"Rechnung", status:"aktiv", umsatz:340},
+    {nr:"K-20512", name:"Jonas Weber", typ:"B2C", ort:"Falkensee", pay:"Rechnung", status:"aktiv", umsatz:120},
+    {nr:"K-20578", name:"Petra Lindner", typ:"B2C", ort:"Stahnsdorf", pay:"Rechnung", status:"aktiv", umsatz:89},
+    {nr:"K-10112", name:"Gartenbau Frische GbR", typ:"B2B", ort:"Kleinmachnow", pay:"Rechnung 14 Tage", status:"aktiv", umsatz:15670},
+    {nr:"K-20640", name:"Tobias Arnold", typ:"B2C", ort:"Potsdam", pay:"Rechnung", status:"aktiv", umsatz:54},
+  ];
+  let kFilter="alle";
+  function eur(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
+  function badge(typ){return typ==="B2B"?'<span class="badge b-b2b">B2B</span>':'<span class="badge b-b2c">B2C</span>';}
+  function statusBadge(s){return s==="aktiv"?'<span class="badge b-on">Aktiv</span>':'<span class="badge b-lock">Gesperrt</span>';}
+  function renderKunden(){
+    const q=(document.getElementById('ksearch').value||"").toLowerCase();
+    const rows=kunden.filter(k=>{
+      const mf = kFilter==="alle" || (kFilter==="gesperrt"? k.status==="gesperrt" : k.typ===kFilter);
+      const mq = !q || k.name.toLowerCase().includes(q) || k.ort.toLowerCase().includes(q);
+      return mf&&mq;
+    });
+    document.getElementById('kbody').innerHTML = rows.map(k=>`
+      <tr>
+        <td><span class="nm">${k.name}</span><div class="sub">${k.nr}</div></td>
+        <td>${badge(k.typ)}</td><td>${k.ort}</td><td>${k.pay}</td><td>${statusBadge(k.status)}</td>
+        <td class="num-c">${eur(k.umsatz)}</td>
+        <td class="num-c"><button class="rowbtn" onclick="toast('Kunde ${k.name} geöffnet')">Öffnen</button></td>
+      </tr>`).join('') || `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--muted)">Keine Kunden gefunden. Suche anpassen oder neuen Kunden anlegen.</td></tr>`;
+    document.getElementById('kcount').textContent = rows.length+" von "+kunden.length+" Kunden";
+  }
+  function filterKunden(){renderKunden();}
+  document.getElementById('kchips').addEventListener('click',e=>{
+    const b=e.target.closest('.chip'); if(!b)return;
+    document.querySelectorAll('#kchips .chip').forEach(c=>c.classList.toggle('on',c===b));
+    kFilter=b.dataset.f; renderKunden();
+  });
+  renderKunden();
+
+  /* ---------- Artikel ---------- */
+  function toggleVer(){document.getElementById('verfields').classList.toggle('hidden', !document.getElementById('veredelbar').checked);}
+
+  /* ---------- Auftrag ---------- */
+  const cat=[
+    {nr:"ART-2001", name:"Warnweste gelb EN ISO 20471", price:12.90, stock:340, unit:"Stück"},
+    {nr:"ART-2014", name:"Sicherheitsschuhe S3", price:54.50, stock:0, unit:"Paar"},
+    {nr:"ART-2031", name:"Softshelljacke „HavelPro“", price:39.90, stock:120, unit:"Stück"},
+    {nr:"ART-2002", name:"Kugelschreiber Metall, gravierbar", price:1.80, stock:5200, unit:"Stück"},
+    {nr:"ART-3007", name:"Ordner A4 breit", price:3.40, stock:880, unit:"Stück"},
+  ];
+  let posId=0;
+  function optionList(sel){return cat.map(a=>`<option value="${a.nr}" ${a.nr===sel?'selected':''}>${a.nr} · ${a.name}</option>`).join('');}
+  function avCell(art,qty){
+    const a=cat.find(x=>x.nr===art); if(!a) return '';
+    if(a.stock>=qty) return '<span class="av ok"><span class="dot"></span>Verfügbar</span>';
+    if(a.stock>0) return '<span class="av part"><span class="dot"></span>Teilw. ('+a.stock+')</span>';
+    return '<span class="av no"><span class="dot"></span>Nicht verfügbar</span>';
+  }
+  function addPos(art="ART-2001", qty=10){
+    const id=++posId;
+    const tr=document.createElement('tr'); tr.id="pos"+id;
+    tr.innerHTML=`
+      <td><select onchange="posChange(${id})" id="a${id}">${optionList(art)}</select></td>
+      <td><input class="qty" type="number" min="1" value="${qty}" id="q${id}" oninput="posChange(${id})"></td>
+      <td class="num-c" id="p${id}"></td>
+      <td id="av${id}"></td>
+      <td class="num-c" id="s${id}"></td>
+      <td><button class="delrow" onclick="delPos(${id})" aria-label="Entfernen"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button></td>`;
+    document.getElementById('posbody').appendChild(tr);
+    posChange(id);
+  }
+  function delPos(id){const el=document.getElementById('pos'+id); if(el)el.remove(); recalc();}
+  function posChange(id){
+    const art=document.getElementById('a'+id).value;
+    const qty=Math.max(1,parseInt(document.getElementById('q'+id).value||"1",10));
+    const a=cat.find(x=>x.nr===art);
+    document.getElementById('p'+id).textContent=eur(a.price);
+    document.getElementById('s'+id).textContent=eur(a.price*qty);
+    document.getElementById('av'+id).innerHTML=avCell(art,qty);
+    recalc();
+  }
+  function recalc(){
+    let sub=0,cnt=0;
+    document.querySelectorAll('#posbody tr').forEach(tr=>{
+      const id=tr.id.replace('pos','');
+      const art=document.getElementById('a'+id).value;
+      const qty=Math.max(1,parseInt(document.getElementById('q'+id).value||"1",10));
+      const a=cat.find(x=>x.nr===art); sub+=a.price*qty; cnt+=qty;
+    });
+    const verOn=document.getElementById('vereddo').checked;
+    const ver=verOn? cnt*1.20 : 0;
+    const net=sub+ver, tax=net*0.19;
+    document.getElementById('sub').textContent=eur(sub);
+    document.getElementById('ver').textContent=eur(ver);
+    document.getElementById('tax').textContent=eur(tax);
+    document.getElementById('tot').textContent=eur(net+tax);
+  }
+  function custChange(){
+    const v=document.getElementById('ordcust').value;
+    const b2c = v==="b2c";
+    document.getElementById('ordtype').value = b2c? "B2C · Kauf auf Rechnung" : "B2B · Kauf auf Rechnung";
+    document.getElementById('atpnote').textContent = b2c
+      ? "B2C: Bei Fehlbestand wird der gesamte Auftrag zurückgestellt, bis er komplett lieferbar ist (keine Teillieferung)."
+      : "B2B: Nicht verfügbare Positionen lösen einen Bestellvorschlag aus; Teillieferung mit Rückstand ist möglich.";
+  }
+  addPos("ART-2001",20); addPos("ART-2014",8);
+  custChange();
+</script>
+</body>
+</html>
